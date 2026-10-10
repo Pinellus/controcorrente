@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Controcorrente</title>
+<meta name="description" content="Opera d'arte in alta risoluzione con zoom, didascalia e musica.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400;1,9..144,500&family=Archivo:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/openseadragon/4.1.0/openseadragon.min.js"></script>
+<style>
+  :root{
+    --wall:#121011;
+    --panel:#1c1815;
+    --panel-2:#221d19;
+    --ink:#EDE6D9;
+    --ink-soft:#A79C8C;
+    --accent:#C89B4A;
+    --accent-dim:#8C6B2E;
+    --line:rgba(237,230,217,0.14);
+    color-scheme:dark;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0;
+    background:var(--wall);
+    color:var(--ink);
+    font-family:"Archivo",system-ui,-apple-system,sans-serif;
+    overflow:hidden;
+  }
+  .stage-wrap{
+    position:fixed;
+    inset:0;
+    display:flex;
+    flex-direction:column;
+    height:100%;
+  }
+
+  /* Top bar */
+  .topbar{
+    position:relative;
+    z-index:5;
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:12px;
+    padding:calc(16px + env(safe-area-inset-top,0px)) 18px 28px;
+    background:linear-gradient(to bottom, rgba(10,9,8,0.72) 0%, rgba(10,9,8,0.0) 100%);
+    pointer-events:none;
+  }
+  .topbar *{pointer-events:auto;}
+  .eyebrow{
+    font-size:10.5px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--accent);
+    font-weight:600;
+    margin:0 0 4px;
+  }
+  .worktitle{
+    font-family:"Fraunces",Georgia,serif;
+    font-style:italic;
+    font-weight:500;
+    font-size:clamp(20px,5vw,28px);
+    margin:0;
+    color:var(--ink);
+    text-wrap:balance;
+    max-width:70vw;
+  }
+  .badge{
+    font-size:10px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    font-weight:600;
+    color:var(--wall);
+    background:var(--accent);
+    padding:4px 9px;
+    border-radius:100px;
+    white-space:nowrap;
+    flex-shrink:0;
+    margin-top:2px;
+  }
+
+  /* Viewer stage */
+  .viewer-frame{
+    flex:1;
+    position:relative;
+    margin:0 10px;
+    border:1px solid var(--line);
+    border-radius:10px;
+    overflow:hidden;
+    background:#0a0908;
+  }
+  #osd{
+    position:absolute;
+    inset:0;
+    cursor:grab;
+  }
+  #osd:active{cursor:grabbing;}
+
+  .hint{
+    position:absolute;
+    left:50%;
+    bottom:18px;
+    transform:translateX(-50%);
+    z-index:4;
+    font-size:12px;
+    letter-spacing:0.04em;
+    color:var(--ink);
+    background:rgba(10,9,8,0.68);
+    border:1px solid var(--line);
+    padding:8px 14px;
+    border-radius:100px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    animation:hintfade 6.5s ease forwards;
+    pointer-events:none;
+    white-space:nowrap;
+  }
+  .hint svg{flex-shrink:0;}
+  @keyframes hintfade{
+    0%{opacity:0; transform:translate(-50%,6px);}
+    10%{opacity:1; transform:translate(-50%,0);}
+    78%{opacity:1;}
+    100%{opacity:0; transform:translate(-50%,0);}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .hint{animation:none; opacity:1;}
+  }
+
+  /* Bottom controls */
+  .controls{
+    position:relative;
+    z-index:5;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding:14px 14px calc(14px + env(safe-area-inset-bottom,0px));
+  }
+  .ctrl-btn{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    color:var(--ink);
+    font-family:"Archivo",sans-serif;
+    font-size:12.5px;
+    font-weight:500;
+    letter-spacing:0.02em;
+    padding:10px 14px;
+    border-radius:100px;
+    cursor:pointer;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .ctrl-btn:hover{border-color:var(--accent-dim);}
+  .ctrl-btn:active{transform:scale(0.97);}
+  .ctrl-btn svg{flex-shrink:0;}
+  .ctrl-btn.is-on{color:var(--wall); background:var(--accent); border-color:var(--accent);}
+
+  .eq{display:flex; align-items:flex-end; gap:2px; height:12px;}
+  .eq span{width:2.5px; background:currentColor; border-radius:1px; height:4px;}
+  .ctrl-btn.is-on .eq span{animation:eq 0.9s ease-in-out infinite;}
+  .eq span:nth-child(1){animation-delay:0s;}
+  .eq span:nth-child(2){animation-delay:0.15s;}
+  .eq span:nth-child(3){animation-delay:0.3s;}
+  @keyframes eq{
+    0%,100%{height:4px;}
+    50%{height:12px;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .eq span{animation:none !important; height:8px !important;}
+  }
+
+  /* Info drawer */
+  .scrim{
+    position:fixed; inset:0; background:rgba(8,7,6,0.55);
+    opacity:0; pointer-events:none; transition:opacity 0.25s ease;
+    z-index:8;
+  }
+  .scrim.open{opacity:1; pointer-events:auto;}
+
+  .drawer{
+    position:fixed;
+    left:0; right:0; bottom:0;
+    z-index:9;
+    background:var(--panel);
+    border-top:1px solid var(--line);
+    border-radius:18px 18px 0 0;
+    padding:20px 22px calc(26px + env(safe-area-inset-bottom,0px));
+    max-height:78vh;
+    overflow-y:auto;
+    transform:translateY(100%);
+    transition:transform 0.32s cubic-bezier(.2,.8,.2,1);
+  }
+  .drawer.open{transform:translateY(0);}
+  .drawer-grip{
+    padding:10px 0 16px;
+    margin:-10px 0 2px;
+    display:flex;
+    justify-content:center;
+    touch-action:none;
+    cursor:grab;
+  }
+  .drawer-grip:active{cursor:grabbing;}
+  .drawer-handle{
+    width:36px; height:4px; border-radius:2px;
+    background:var(--line);
+  }
+  .drawer h2{
+    font-family:"Fraunces",Georgia,serif;
+    font-style:italic;
+    font-weight:500;
+    font-size:22px;
+    margin:0 0 2px;
+    text-wrap:balance;
+  }
+  .meta-row{
+    display:flex; flex-wrap:wrap; gap:6px 14px;
+    font-size:12px; color:var(--ink-soft);
+    margin:8px 0 16px;
+    letter-spacing:0.01em;
+  }
+  .meta-row span{white-space:nowrap;}
+  .caption{
+    font-family:"Fraunces",Georgia,serif;
+    font-size:16px;
+    line-height:1.65;
+    color:var(--ink);
+    max-width:60ch;
+    margin:0 0 20px;
+  }
+  .artist-line{
+    font-size:13px;
+    color:var(--ink-soft);
+    letter-spacing:0.01em;
+    margin:4px 0 16px;
+  }
+  .artist-bio{
+    font-family:"Fraunces",Georgia,serif;
+    font-size:14.5px;
+    line-height:1.62;
+    color:var(--ink-soft);
+    max-width:60ch;
+    margin:0 0 14px;
+  }
+  .social-row{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin:0 0 20px;
+  }
+  .social-link{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-family:"Archivo",sans-serif;
+    font-size:12.5px;
+    font-weight:500;
+    color:var(--accent);
+    text-decoration:none;
+    border:1px solid var(--line);
+    padding:7px 13px;
+    border-radius:100px;
+    transition:border-color .15s ease, color .15s ease;
+  }
+  .social-link:hover{border-color:var(--accent-dim); color:var(--ink);}
+  .social-link span{font-size:11px;}
+  .social-note{
+    font-size:11px;
+    color:var(--ink-soft);
+    opacity:0.8;
+    margin:-6px 0 20px;
+  }
+  .divider{border:none; border-top:1px solid var(--line); margin:18px 0;}
+  .note-label{
+    font-size:10px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--accent);
+    font-weight:600;
+    margin:0 0 8px;
+    display:block;
+  }
+  .colophon{
+    text-align:center;
+    font-size:11px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    opacity:0.7;
+    margin:2px 0 0;
+  }
+
+  audio{display:none;}
+</style>
+</head>
+<body>
+
+<div class="stage-wrap">
+  <div class="topbar">
+    <div>
+      <p class="eyebrow">Caterina Pinelli · ABANA 2026</p>
+      <h1 class="worktitle">Controcorrente</h1>
+    </div>
+    <span class="badge">Anteprima</span>
+  </div>
+
+  <div class="viewer-frame">
+    <div id="osd"></div>
+    <div class="hint" id="hint">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 3v18M15 3v18M3 9h18M3 15h18" opacity="0"/><path d="M12 3v7m0 0-3-3m3 3 3-3M12 21v-7m0 0-3 3m3-3 3 3"/></svg>
+      trascina per muoverti, pizzica o usa la rotella per lo zoom
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="ctrl-btn" id="infoBtn" aria-haspopup="true" aria-expanded="false">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v6" stroke-linecap="round"/><circle cx="12" cy="8" r="0.5" fill="currentColor" stroke="none"/></svg>
+      Didascalia
+    </button>
+    <button class="ctrl-btn" id="musicBtn" aria-pressed="false">
+      <svg id="musicIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6,4 20,12 6,20" fill="currentColor" stroke="none"/></svg>
+      <span class="eq" id="eq" hidden><span></span><span></span><span></span></span>
+      <span id="musicLabel">Ascolta</span>
+    </button>
+  </div>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<div class="drawer" id="drawer" role="dialog" aria-label="Didascalia dell'opera">
+  <div class="drawer-grip" id="drawerGrip"><div class="drawer-handle"></div></div>
+  <h2>Controcorrente</h2>
+  <p class="artist-line">Caterina Pinelli, 2026</p>
+  <div class="meta-row">
+    <span>Pannello murale, opera collettiva</span>
+    <span>·</span>
+    <span>Opera d'esempio</span>
+  </div>
+  <p class="caption">
+    Questa è la didascalia dell'opera: qui puoi raccontare in poche righe il concept del pannello,
+    la partecipazione del gruppo di bambini che ha contribuito e cosa rappresenta per la tesi
+    &mdash; esattamente il testo che comparirà accanto all'immagine reale quando gli ospiti apriranno
+    la pagina dal QR code sulla bomboniera.
+  </p>
+
+  <span class="note-label">L'artista</span>
+  <p class="artist-bio">
+    Caterina Pinelli nasce a Napoli nel 2005. Si forma al liceo artistico Colombo di
+    Marigliano&ndash;San Vitaliano e si diploma in Pittura all'Accademia di Belle Arti di Napoli
+    con la tesi <em>Murales: l'arte dal popolo per il popolo</em> (relatore Vincenzo Palumbo,
+    A.A. 2025/2026). <em>Controcorrente</em> nasce come opera conclusiva di questo percorso: un
+    pannello murale pensato come lavoro collettivo, realizzato insieme a un gruppo di bambini.
+  </p>
+  <div class="social-row">
+    <a class="social-link" href="https://www.instagram.com/cata.s_art/" target="_blank" rel="noopener noreferrer">Instagram <span>↗</span></a>
+    <a class="social-link" href="https://www.tiktok.com/@caterinaart" target="_blank" rel="noopener noreferrer">TikTok <span>↗</span></a>
+    <a class="social-link" href="https://www.instagram.com/stories/highlights/18165265753476051/" target="_blank" rel="noopener noreferrer">Il racconto del progetto <span>↗</span></a>
+  </div>
+  <p class="social-note">Il racconto è su Instagram: per vederlo serve avere l'app o un account Instagram e aver fatto l'accesso.</p>
+
+  <hr class="divider">
+  <p class="colophon">2026 &mdash; Pinellus</p>
+</div>
+
+<script>
+(function(){
+  var viewer = OpenSeadragon({
+    id: "osd",
+    prefixUrl: "",
+    showNavigationControl: false,
+    showZoomControl: false,
+    showHomeControl: false,
+    showFullPageControl: false,
+    showRotationControl: false,
+    gestureSettingsMouse: { clickToZoom: false, dblClickToZoom: true },
+    gestureSettingsTouch: { pinchToZoom: true, flickEnabled: true },
+    visibilityRatio: 1,
+    constrainDuringPan: true,
+    minZoomImageRatio: 0.9,
+    maxZoomPixelRatio: 5,
+    springStiffness: 8,
+    animationTime: 0.8,
+    tileSources: { type: "image", url: "opera-demo.jpg" }
+  });
+
+  var hint = document.getElementById("hint");
+  setTimeout(function(){ if(hint) hint.style.display = "none"; }, 7000);
+
+  // Info drawer
+  var drawer = document.getElementById("drawer");
+  var scrim = document.getElementById("scrim");
+  var infoBtn = document.getElementById("infoBtn");
+  function openDrawer(){
+    drawer.classList.add("open");
+    scrim.classList.add("open");
+    infoBtn.setAttribute("aria-expanded","true");
+  }
+  function closeDrawer(){
+    drawer.classList.remove("open");
+    scrim.classList.remove("open");
+    infoBtn.setAttribute("aria-expanded","false");
+  }
+  infoBtn.addEventListener("click", function(){
+    drawer.classList.contains("open") ? closeDrawer() : openDrawer();
+  });
+  scrim.addEventListener("click", closeDrawer);
+
+  // Swipe-down-to-close on the grip handle
+  var grip = document.getElementById("drawerGrip");
+  var dragStartY = 0, dragDy = 0, dragging = false;
+  grip.addEventListener("pointerdown", function(e){
+    dragging = true;
+    dragStartY = e.clientY;
+    dragDy = 0;
+    drawer.style.transition = "none";
+    if(grip.setPointerCapture){ try{ grip.setPointerCapture(e.pointerId); }catch(err){} }
+  });
+  grip.addEventListener("pointermove", function(e){
+    if(!dragging) return;
+    dragDy = Math.max(0, e.clientY - dragStartY);
+    drawer.style.transform = "translateY(" + dragDy + "px)";
+  });
+  function endDrag(){
+    if(!dragging) return;
+    dragging = false;
+    drawer.style.transition = "";
+    drawer.style.transform = "";
+    if(dragDy > 60){
+      closeDrawer();
+    }
+  }
+  grip.addEventListener("pointerup", endDrag);
+  grip.addEventListener("pointercancel", endDrag);
+
+  // Music control
+  var audio = new Audio("musica-demo.mp3");
+  audio.loop = true;
+  var musicBtn = document.getElementById("musicBtn");
+  var musicIcon = document.getElementById("musicIcon");
+  var musicLabel = document.getElementById("musicLabel");
+  var eq = document.getElementById("eq");
+  var playing = false;
+
+  var playPath = '<polygon points="6,4 20,12 6,20" fill="currentColor" stroke="none"/>';
+  var pausePath = '<rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none"/><rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none"/>';
+
+  function setPlaying(state){
+    playing = state;
+    musicBtn.classList.toggle("is-on", playing);
+    musicBtn.setAttribute("aria-pressed", playing ? "true":"false");
+    musicIcon.innerHTML = playing ? pausePath : playPath;
+    musicLabel.textContent = playing ? "In ascolto" : "Ascolta";
+    eq.hidden = !playing;
+  }
+
+  musicBtn.addEventListener("click", function(){
+    if(playing){
+      audio.pause();
+      setPlaying(false);
+    } else {
+      audio.play().then(function(){ setPlaying(true); }).catch(function(){ setPlaying(false); });
+    }
+  });
+})();
+</script>
+</body>
+</html>
