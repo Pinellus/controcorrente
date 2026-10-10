@@ -386,6 +386,23 @@
     tileSources: { type: "image", url: "controcorrente-opera.jpg" }
   });
 
+  // Force OpenSeadragon to recompute its size on rotation: some mobile
+  // browsers settle the new layout a moment after orientationchange/resize
+  // fires, so OSD's own auto-resize can grab the stale (tiny) dimensions.
+  function fixViewerSize(){
+    if (viewer && viewer.viewport) {
+      viewer.viewport.resize();
+      viewer.viewport.goHome(true);
+    }
+  }
+  window.addEventListener("orientationchange", function(){
+    setTimeout(fixViewerSize, 100);
+    setTimeout(fixViewerSize, 400);
+  });
+  window.addEventListener("resize", function(){
+    setTimeout(fixViewerSize, 100);
+  });
+
   var hint = document.getElementById("hint");
   setTimeout(function(){ if(hint) hint.style.display = "none"; }, 7000);
 
