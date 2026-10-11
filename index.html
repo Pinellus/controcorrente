@@ -141,7 +141,7 @@
     z-index:5;
     display:flex;
     align-items:center;
-    justify-content:space-between;
+    justify-content:flex-start;
     gap:10px;
     padding:14px 14px calc(14px + env(safe-area-inset-bottom,0px));
   }
@@ -311,7 +311,6 @@
       <p class="eyebrow">Caterina Pinelli · ABANA 2026</p>
       <h1 class="worktitle">Controcorrente</h1>
     </div>
-    <span class="badge">Anteprima</span>
   </div>
 
   <div class="viewer-frame">
@@ -327,11 +326,6 @@
       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v6" stroke-linecap="round"/><circle cx="12" cy="8" r="0.5" fill="currentColor" stroke="none"/></svg>
       Didascalia
     </button>
-    <button class="ctrl-btn" id="musicBtn" aria-pressed="false">
-      <svg id="musicIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6,4 20,12 6,20" fill="currentColor" stroke="none"/></svg>
-      <span class="eq" id="eq" hidden><span></span><span></span><span></span></span>
-      <span id="musicLabel">Ascolta</span>
-    </button>
   </div>
 </div>
 
@@ -341,13 +335,33 @@
   <h2>Controcorrente</h2>
   <p class="artist-line">Caterina Pinelli, 2026</p>
   <div class="meta-row">
-    <span>Pannello murale, opera collettiva</span>
+    <span>Opera collettiva, tecnica mista su legno</span>
+    <span>2,20 &times; 1,20 m</span>
   </div>
   <p class="caption">
-    Questa è la didascalia dell'opera: qui puoi raccontare in poche righe il concept del pannello,
-    la partecipazione del gruppo di bambini che ha contribuito e cosa rappresenta per la tesi
-    &mdash; esattamente il testo che comparirà accanto all'immagine reale quando gli ospiti apriranno
-    la pagina dal QR code sulla bomboniera.
+    Questo dipinto completa la mia tesi di laurea in Pittura, intitolata
+    <em>Murales: l'arte dal popolo per il popolo</em>.
+  </p>
+  <p class="caption">
+    L'opera nasce da un mio disegno in cui &egrave; illustrato un branco di pesci, in mezzo al
+    quale uno solo nuota in direzione opposta, trasportando un libro dal titolo
+    <em>Favole dal mondo</em>. La conoscenza permette al &ldquo;pesce controcorrente&rdquo; di
+    avere una visione diversa e trovare il coraggio per provare a cambiare ci&ograve; che non gli
+    piace.
+  </p>
+  <p class="caption">
+    L'opera &egrave; stata resa collettiva coinvolgendo un gruppo di bambini insieme ai quali
+    ragionare sul mio disegno. Abbiamo riflettuto sulle direzioni possibili, stabilendo a quali
+    opporci, immedesimandoci nel pesce controcorrente. I bambini hanno quindi rappresentato sui
+    12 pesci del branco, tramite pittura e collage, i temi negativi individuati.
+  </p>
+  <p class="caption">
+    L'opera &egrave; stata solo un pretesto, il laboratorio ha prodotto molto di pi&ugrave;.
+    &Egrave; stata occasione di riflessione su temi importanti, di scambio di idee, di
+    apprendimento di nuove tecniche e di nuovi modi per comunicare. Mettersi in cerchio e
+    proporre la propria idea &egrave; un atto di coraggio, cimentarsi nei panni di un artista
+    &egrave; un atto di coraggio. Sono andati controcorrente, e spero che quest'esperienza sia
+    stata per loro una spinta in pi&ugrave;.
   </p>
 
   <span class="note-label">L'artista</span>
@@ -355,8 +369,7 @@
     Caterina Pinelli nasce a Napoli nel 2005. Si forma al liceo artistico Colombo di
     Marigliano&ndash;San Vitaliano e si diploma in Pittura all'Accademia di Belle Arti di Napoli
     con la tesi <em>Murales: l'arte dal popolo per il popolo</em> (relatore Vincenzo Palumbo,
-    A.A. 2025/2026). <em>Controcorrente</em> nasce come opera conclusiva di questo percorso: un
-    pannello murale pensato come lavoro collettivo, realizzato insieme a un gruppo di bambini.
+    A.A. 2025/2026).
   </p>
   <div class="social-row">
     <a class="social-link" href="https://www.instagram.com/cata.s_art/" target="_blank" rel="noopener noreferrer">Instagram <span>↗</span></a>
@@ -455,36 +468,6 @@
   }
   grip.addEventListener("pointerup", endDrag);
   grip.addEventListener("pointercancel", endDrag);
-
-  // Music control
-  var audio = new Audio("musica-demo.mp3");
-  audio.loop = true;
-  var musicBtn = document.getElementById("musicBtn");
-  var musicIcon = document.getElementById("musicIcon");
-  var musicLabel = document.getElementById("musicLabel");
-  var eq = document.getElementById("eq");
-  var playing = false;
-
-  var playPath = '<polygon points="6,4 20,12 6,20" fill="currentColor" stroke="none"/>';
-  var pausePath = '<rect x="6" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none"/><rect x="14" y="4" width="4" height="16" rx="1" fill="currentColor" stroke="none"/>';
-
-  function setPlaying(state){
-    playing = state;
-    musicBtn.classList.toggle("is-on", playing);
-    musicBtn.setAttribute("aria-pressed", playing ? "true":"false");
-    musicIcon.innerHTML = playing ? pausePath : playPath;
-    musicLabel.textContent = playing ? "In ascolto" : "Ascolta";
-    eq.hidden = !playing;
-  }
-
-  musicBtn.addEventListener("click", function(){
-    if(playing){
-      audio.pause();
-      setPlaying(false);
-    } else {
-      audio.play().then(function(){ setPlaying(true); }).catch(function(){ setPlaying(false); });
-    }
-  });
 })();
 </script>
 </body>
